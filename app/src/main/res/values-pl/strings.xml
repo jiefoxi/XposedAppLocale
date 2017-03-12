@@ -1,13 +1,13 @@
 <resources>
-    <string name="app_name">App Locale</string>
-    <string name="xposed_description">Set language on a per-app basis</string>
+    <string name="app_name">Język aplikacji</string>
+    <string name="xposed_description">Ustaw język dla każdej aplikacji z osobna</string>
 
-    <string name="loading_apps">Loading Apps&#8230;</string>
-    <string name="action_search">Search</string>
-    <string name="action_language">Languages</string>
-    <string name="choose_languages">Choose Languages</string>
-    <string name="choose_languages_save">Save</string>
-    <string name="choose_languages_cancel">Cancel</string>
+    <string name="loading_apps">Ładowanie aplikacji&#8230;</string>
+    <string name="action_search">Wyszukaj</string>
+    <string name="action_language">Języki</string>
+    <string name="choose_languages">Wybierz języki</string>
+    <string name="choose_languages_save">Zapisz</string>
+    <string name="choose_languages_cancel">Anuluj</string>
 
     <string-array name="locales">
         <item>ar-EG</item>
@@ -30,7 +30,7 @@
         <item>en-SG</item>
         <item>en-US</item>
         <item>en-ZA</item>
-        <item>eo</item>
+		<item>eo</item>
         <item>es-ES</item>
         <item>es-US</item>
         <item>fi-FI</item>
