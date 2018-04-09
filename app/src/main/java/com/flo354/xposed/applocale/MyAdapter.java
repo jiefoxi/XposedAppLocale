@@ -1,9 +1,10 @@
-package com.zhangfx.xposed.applocale;
+package com.flo354.xposed.applocale;
 
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -12,24 +13,28 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
 
-    private ArrayList<AppItem> appItemList = new ArrayList<>();
-    private static Context context;
-    private static PackageManager pm;
-    private static SharedPreferences prefs;
+    private final List<AppItem> appItemList;
 
-    public MyAdapter(Context context, PackageManager pm, SharedPreferences prefs, ArrayList<AppItem> appItemList) {
+    private final Context context;
+
+    private final PackageManager pm;
+
+    private final SharedPreferences prefs;
+
+    public MyAdapter(Context context) {
         setHasStableIds(true);
 
         this.context = context;
-        this.pm = pm;
-        this.prefs = prefs;
-        addAll(appItemList);
+        this.pm = context.getPackageManager();
+        this.prefs = context.getSharedPreferences(Common.PREFS, Context.MODE_WORLD_READABLE);
+        this.appItemList = new LinkedList<>();
     }
 
     public void add(AppItem appItem) {
@@ -48,17 +53,14 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         addAll(Arrays.asList(appItems));
     }
 
+    @NonNull
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        context = parent.getContext();
-
-        ViewHolder viewHolder = new ViewHolder(LayoutInflater.from(context).inflate(R.layout.app_item, parent, false));
-
-        return viewHolder;
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        return new ViewHolder(LayoutInflater.from(context).inflate(R.layout.app_item, parent, false));
     }
 
     @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         final AppItem app = getItem(position);
 
         holder.appIcon.setImageDrawable(pm.getApplicationIcon(app.getApplicationInfo()));
@@ -74,35 +76,33 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         }
 
         holder.itemView.setTag(app);
-
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View v) {
                 final AppItem app = (AppItem) v.getTag();
                 String currentLocale = prefs.getString(app.getPackageInfo().packageName, Common.DEFAULT_LOCALE);
                 String[] defaultLocales = new LocaleList(context, "").getLocaleCodes();
-                String langs = prefs.getString("languages", "");
-                if (!langs.isEmpty()) {
-                    if (!currentLocale.contentEquals(Common.DEFAULT_LOCALE) && !langs.contains(currentLocale)) {
-                        langs = currentLocale + "," + langs;
+                String languages = prefs.getString("languages", "");
+                if (!languages.isEmpty()) {
+                    if (!currentLocale.contentEquals(Common.DEFAULT_LOCALE) && !languages.contains(currentLocale)) {
+                        languages = currentLocale + "," + languages;
                     }
 
-                    langs = Common.DEFAULT_LOCALE + "," + langs;
+                    languages = Common.DEFAULT_LOCALE + "," + languages;
 
-                    defaultLocales = langs.split(",");
+                    defaultLocales = languages.split(",");
                 }
 
                 final String[] locales = defaultLocales;
-
                 int index = Arrays.asList(defaultLocales).indexOf(currentLocale);
 
                 new AlertDialog.Builder(context)
-                        .setTitle((String) pm.getApplicationLabel(app.getApplicationInfo()))
+                        .setTitle(pm.getApplicationLabel(app.getApplicationInfo()))
                         .setSingleChoiceItems(locales, index, new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
-                                TextView appLocale = (TextView) v.findViewById(R.id.app_locale);
+                                TextView appLocale = v.findViewById(R.id.app_locale);
                                 appLocale.setText(locales[which]);
 
                                 String packageName = app.getPackageInfo().packageName;
@@ -112,7 +112,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
                                 if (which == 0) {
                                     if (!currentLocale.contentEquals(Common.DEFAULT_LOCALE)) {
                                         prefsEditor.remove(packageName);
-                                        prefsEditor.commit();
+                                        prefsEditor.apply();
                                     }
                                     appLocale.setTextColor(context.getResources().getColor(R.color.colorPrimary));
                                 } else {
@@ -131,6 +131,10 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     public void clear() {
         appItemList.clear();
         notifyDataSetChanged();
+    }
+
+    public List<AppItem> getAll() {
+        return new LinkedList<>(appItemList);
     }
 
     public AppItem getItem(int position) {
@@ -156,10 +160,10 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
         public ViewHolder(View view) {
             super(view);
 
-            appIcon = (ImageView) view.findViewById(R.id.app_icon);
-            appLabel = (TextView) view.findViewById(R.id.app_label);
-            appPackage = (TextView) view.findViewById(R.id.app_package);
-            appLocale = (TextView) view.findViewById(R.id.app_locale);
+            appIcon = view.findViewById(R.id.app_icon);
+            appLabel = view.findViewById(R.id.app_label);
+            appPackage = view.findViewById(R.id.app_package);
+            appLocale = view.findViewById(R.id.app_locale);
         }
     }
 }

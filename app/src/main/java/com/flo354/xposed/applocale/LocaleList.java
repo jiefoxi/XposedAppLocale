@@ -1,6 +1,8 @@
-package com.zhangfx.xposed.applocale;
+package com.flo354.xposed.applocale;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.util.Log;
 
 import java.text.Collator;
 import java.util.Arrays;
@@ -32,12 +34,13 @@ public class LocaleList {
         }
 
         @Override
-        public int compareTo(LocaleInfo another) {
+        public int compareTo(@NonNull LocaleInfo another) {
             return sCollator.compare(this.label, another.label);
         }
     }
 
     private String[] localeCodes;
+
     private String[] localeDescriptions;
 
     public LocaleList(Context context, String defaultLabel) {
@@ -46,41 +49,37 @@ public class LocaleList {
         final int origSize = locales.length;
         final LocaleInfo[] preprocess = new LocaleInfo[origSize];
         int finalSize = 0;
-        for (int i = 0; i < origSize; i++) {
-            final String s = locales[i];
-            final int len = s.length();
-            if (len == 5) {
-                String language = s.substring(0, 2);
-                String country = s.substring(3, 5);
-                final Locale l = new Locale(language, country);
+        for (final String s : locales) {
+            final String localesSplit[] = s.split("-",2);
+            final String language = localesSplit[0];
+            final String country = localesSplit.length == 2 ? localesSplit[1] : "";
+            final Locale l = new Locale(language, country);
 
-                if (finalSize == 0) {
-                    preprocess[finalSize++] = new LocaleInfo(toTitleCase(l.getDisplayLanguage(l)), l);
+            if (finalSize == 0) {
+                preprocess[finalSize++] = new LocaleInfo(toTitleCase(l.getDisplayLanguage(l)), l);
+            } else {
+                // check previous entry:
+                // same lang and a country -> upgrade to full name and
+                // insert ours with full name
+                // diff lang -> insert ours with lang-only name
+                if (preprocess[finalSize - 1].locale.getLanguage().equals(language)) {
+                    preprocess[finalSize - 1].label = toTitleCase(getDisplayName(preprocess[finalSize - 1].locale));
+                    preprocess[finalSize++] = new LocaleInfo(toTitleCase(getDisplayName(l)), l);
                 } else {
-                    // check previous entry:
-                    // same lang and a country -> upgrade to full name and
-                    // insert ours with full name
-                    // diff lang -> insert ours with lang-only name
-                    if (preprocess[finalSize - 1].locale.getLanguage().equals(language)) {
-                        preprocess[finalSize - 1].label = toTitleCase(getDisplayName(preprocess[finalSize - 1].locale));
-                        preprocess[finalSize++] = new LocaleInfo(toTitleCase(getDisplayName(l)), l);
+                    String displayName;
+                    if (s.equals("zz_ZZ")) {
+                        displayName = "Pseudo...";
                     } else {
-                        String displayName;
-                        if (s.equals("zz_ZZ")) {
-                            displayName = "Pseudo...";
-                        } else {
-                            displayName = toTitleCase(l.getDisplayLanguage(l));
-                        }
-                        preprocess[finalSize++] = new LocaleInfo(displayName, l);
+                        displayName = toTitleCase(l.getDisplayLanguage(l));
                     }
+                    preprocess[finalSize++] = new LocaleInfo(displayName, l);
                 }
             }
+
         }
 
         final LocaleInfo[] localeInfos = new LocaleInfo[finalSize];
-        for (int i = 0; i < finalSize; i++) {
-            localeInfos[i] = preprocess[i];
-        }
+        System.arraycopy(preprocess, 0, localeInfos, 0, finalSize);
         Arrays.sort(localeInfos);
 
         localeCodes = new String[localeInfos.length + 1];

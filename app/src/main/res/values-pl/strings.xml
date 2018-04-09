@@ -1,0 +1,12 @@
+<resources>
+    <string name="xposed_description">Zmień język dowolnej aplikacji</string>
+
+    <string name="loading_apps">Ładowanie aplikacji&#8230;</string>
+    <string name="action_search">Wyszykaj</string>
+    <string name="action_language">Języki</string>
+    <string name="choose_languages">Wybór języków</string>
+    <string name="choose_languages_save">Zapisz</string>
+    <string name="choose_languages_cancel">Anuluj</string>
+    <string name="show_system_apps">Wyświetl aplikacje systemowe</string>
+    <string name="show_only_modified_apps">Wyświetl tylko zmodyfikowane aplikacje</string>
+</resources>

@@ -17,4 +17,4 @@
 #}
 
 -keep class android.support.v7.widget.SearchView { *; }
--keep public class com.zhangfx.xposed.applocale.XposedMod
+-keep public class com.flo354.xposed.applocale.XposedMod

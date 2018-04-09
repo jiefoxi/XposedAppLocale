@@ -1,17 +1,13 @@
-package com.zhangfx.xposed.applocale;
+package com.flo354.xposed.applocale;
 
 import android.annotation.SuppressLint;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
-import android.os.AsyncTask;
+import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -27,47 +23,59 @@ import android.view.View;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
+import java.util.LinkedList;
 import java.util.List;
 
-@SuppressLint("WorldReadableFiles")
+@SuppressLint({"WorldReadableFiles", "SetWorldReadable"})
 public class MainActivity extends AppCompatActivity implements SearchView.OnQueryTextListener {
 
-    private static File prefsFile = new File(Environment.getDataDirectory(), String.format("data/%s/shared_prefs/%s.xml", Common.MY_PACKAGE_NAME, Common.PREFS));
+    private static File PREFS_FILE = new File(Environment.getDataDirectory(), String.format("data/%s/shared_prefs/%s.xml", Common.MY_PACKAGE_NAME, Common.PREFS));
+
     private SharedPreferences mPrefs;
-    private ArrayList<String> languages;
+
+    private List<String> languages;
+
+    private List<AppItem> appItemList;
+
     private boolean[] checkItems;
+
     private boolean[] tmpCheckItems;
 
-    private MyAdapter myAdapter;
-    private ArrayList<AppItem> appItemList;
-    private PackageManager pm;
-
-    private ProgressDialog mProgressDialog;
-    private SearchView mSearchView;
     private RecyclerView mRecyclerView;
+
+
+    private String filterQuery;
+
+    private boolean showSystemApps;
+
+    private boolean showOnlyModifiedApps;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        prefsFile.setReadable(true, false);
+        PREFS_FILE.setReadable(true, false);
         mPrefs = getSharedPreferences(Common.PREFS, Context.MODE_WORLD_READABLE);
 
-        languages = new ArrayList<>();
+        filterQuery = "";
+        showSystemApps = mPrefs.getBoolean("show_system_apps", true);
+        showOnlyModifiedApps = mPrefs.getBoolean("show_only_modified_apps", false);
+
+        languages = new LinkedList<>();
         LocaleList localeList = new LocaleList(getApplicationContext(), "");
         languages.addAll(localeList.getDescriptionList());
         languages.remove(0);
 
+        appItemList = new LinkedList<>();
+
         checkItems = new boolean[languages.size()];
-        String[] langs = mPrefs.getString("languages", "").split(",");
-        for (int i = 0; i < langs.length; i++) {
-            int index = languages.indexOf(localeList.getDescriptionList().get(localeList.getLocalePos(langs[i])));
+        String[] languages = mPrefs.getString("languages", "").split(",");
+        for (String lang : languages) {
+            int index = this.languages.indexOf(localeList.getDescriptionList().get(localeList.getLocalePos(lang)));
             if (index > -1) {
                 checkItems[index] = true;
             }
@@ -75,12 +83,13 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
         tmpCheckItems = Arrays.copyOf(checkItems, checkItems.length);
 
-        mRecyclerView = (RecyclerView) findViewById(R.id.recyclerView);
+        mRecyclerView = findViewById(R.id.recyclerView);
         mRecyclerView.setLayoutManager(new LinearLayoutManager(this));
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
         mRecyclerView.addItemDecoration(new DividerDecoration(this));
+        mRecyclerView.setAdapter(new MyAdapter(this));
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -88,16 +97,14 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
             }
         });
 
-        pm = getPackageManager();
-        List<PackageInfo> packages = pm.getInstalledPackages(0);
-
-        mProgressDialog = new ProgressDialog(this);
-        mProgressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-        mProgressDialog.setMax(packages.size());
-        mProgressDialog.setMessage(getString(R.string.loading_apps));
-        mProgressDialog.setCancelable(false);
-
-        new GetAppsTask().execute(packages);
+        new GetAppsTask(this, new GetAppsTask.AsyncResponse() {
+            @Override
+            public void processFinish(List<AppItem> appItems) {
+                appItemList.addAll(appItems);
+                ((MyAdapter) mRecyclerView.getAdapter()).addAll(appItems);
+                filterApps();
+            }
+        }).execute();
     }
 
     @Override
@@ -105,10 +112,9 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
-        MenuItem item = (MenuItem) menu.findItem(R.id.action_search);
-        mSearchView = (SearchView) MenuItemCompat.getActionView(item);
-        mSearchView.setOnQueryTextListener(this);
-
+        ((SearchView) menu.findItem(R.id.action_search).getActionView()).setOnQueryTextListener(this);
+        menu.findItem(R.id.action_show_system_apps).setChecked(mPrefs.getBoolean("show_system_apps", true));
+        menu.findItem(R.id.action_show_only_modified_apps).setChecked(mPrefs.getBoolean("show_only_modified_apps", false));
         return true;
     }
 
@@ -130,16 +136,16 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                                 checkItems = Arrays.copyOf(tmpCheckItems, tmpCheckItems.length);
 
                                 LocaleList localeList = new LocaleList(getApplicationContext(), "");
-                                ArrayList<String> langs = new ArrayList<>();
+                                ArrayList<String> languages = new ArrayList<>();
                                 for (int i = 0; i < checkItems.length; i++) {
                                     if (checkItems[i]) {
-                                        langs.add(localeList.getLocaleCodes()[localeList.getDescriptionList().indexOf(languages.get(i))]);
+                                        languages.add(localeList.getLocaleCodes()[localeList.getDescriptionList().indexOf(MainActivity.this.languages.get(i))]);
                                     }
                                 }
 
                                 SharedPreferences.Editor prefsEditor = mPrefs.edit();
-                                prefsEditor.putString("languages", TextUtils.join(",", langs));
-                                prefsEditor.commit();
+                                prefsEditor.putString("languages", TextUtils.join(",", languages));
+                                prefsEditor.apply();
                             }
                         })
                         .setNegativeButton(R.string.choose_languages_cancel, new DialogInterface.OnClickListener() {
@@ -150,6 +156,17 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
                         })
                         .create().show();
                 return true;
+            case R.id.action_show_system_apps:
+                item.setChecked(!item.isChecked());
+                showSystemApps = item.isChecked();
+                mPrefs.edit().putBoolean("show_system_apps", showSystemApps).apply();
+                filterApps();
+                return true;
+            case R.id.action_show_only_modified_apps:
+                item.setChecked(!item.isChecked());
+                showOnlyModifiedApps = item.isChecked();
+                mPrefs.edit().putBoolean("show_only_modified_apps", showOnlyModifiedApps).apply();
+                filterApps();
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -157,22 +174,8 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
 
     @Override
     public boolean onQueryTextChange(String newText) {
-        myAdapter.clear();
-
-        ArrayList<AppItem> subAppItemList = new ArrayList<>();
-
-        String query = newText.toLowerCase();
-
-        for (AppItem appItem : appItemList) {
-            if (appItem.getPackageInfo().packageName.toLowerCase().contains(query)
-                    || appItem.getAppLabel().toLowerCase().contains(query)) {
-                subAppItemList.add(appItem);
-            }
-        }
-
-        myAdapter.addAll(subAppItemList);
-        mRecyclerView.scrollToPosition(0);
-
+        filterQuery = newText.toLowerCase();
+        filterApps();
         return false;
     }
 
@@ -181,50 +184,37 @@ public class MainActivity extends AppCompatActivity implements SearchView.OnQuer
         return false;
     }
 
-    private class GetAppsTask extends AsyncTask<List<PackageInfo>, Integer, ArrayList<AppItem>> {
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-            mProgressDialog.show();
-        }
+    private void filterApps() {
+        List<AppItem> subAppItemList = new LinkedList<>();
 
-        @Override
-        protected ArrayList<AppItem> doInBackground(List<PackageInfo>... params) {
-            ArrayList<AppItem> appItems = new ArrayList<>();
-
-            int i = 1;
-            for (PackageInfo packageInfo : params[0]) {
-                if (packageInfo.applicationInfo.enabled) {
-                    appItems.add(new AppItem(packageInfo, pm.getApplicationLabel(packageInfo.applicationInfo).toString()));
-                }
-
-                publishProgress(i++);
+        for (AppItem appItem : appItemList) {
+            if (appItem.getPackageInfo().packageName.toLowerCase().contains(filterQuery)
+                    || appItem.getAppLabel().toLowerCase().contains(filterQuery)) {
+                subAppItemList.add(appItem);
             }
-
-            return appItems;
         }
 
-        @Override
-        protected void onProgressUpdate(Integer... values) {
-            super.onProgressUpdate(values);
-            mProgressDialog.setProgress(values[0]);
-        }
-
-        @Override
-        protected void onPostExecute(ArrayList<AppItem> appItems) {
-            super.onPostExecute(appItems);
-            mProgressDialog.dismiss();
-
-            appItemList = appItems;
-
-            Collections.sort(appItemList, new Comparator<AppItem>() {
-                @Override
-                public int compare(AppItem lhs, AppItem rhs) {
-                    return lhs.getAppLabel().compareToIgnoreCase(rhs.getAppLabel());
+        if (!showSystemApps) {
+            List<AppItem> subAppItemList2 = new LinkedList<>(subAppItemList);
+            for (AppItem appItem: subAppItemList2) {
+                if ((appItem.getApplicationInfo().flags & ApplicationInfo.FLAG_SYSTEM) != 0) {
+                    subAppItemList.remove(appItem);
                 }
-            });
-
-            mRecyclerView.setAdapter(myAdapter = new MyAdapter(getApplicationContext(), pm, mPrefs, appItemList));
+            }
         }
+
+        if (showOnlyModifiedApps) {
+            List<AppItem> subAppItemList2 = new LinkedList<>(subAppItemList);
+            for (AppItem appItem: subAppItemList2) {
+                String locale = mPrefs.getString(appItem.getPackageInfo().packageName, Common.DEFAULT_LOCALE);
+                if (locale.contentEquals(Common.DEFAULT_LOCALE)) {
+                    subAppItemList.remove(appItem);
+                }
+            }
+        }
+
+        ((MyAdapter) mRecyclerView.getAdapter()).clear();
+        ((MyAdapter) mRecyclerView.getAdapter()).addAll(subAppItemList);
+        mRecyclerView.scrollToPosition(0);
     }
 }

@@ -1,4 +1,4 @@
-package com.zhangfx.xposed.applocale;
+package com.flo354.xposed.applocale;
 
 import android.content.Context;
 import android.content.res.TypedArray;

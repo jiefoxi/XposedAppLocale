@@ -1,0 +1,12 @@
+<resources>
+    <string name="xposed_description">Agordi lingvon por ĉiu aplikaĵo</string>
+
+    <string name="loading_apps">Ŝargado de aplikaĵoj&#8230;</string>
+    <string name="action_search">Serĉi</string>
+    <string name="action_language">Lingvoj</string>
+    <string name="choose_languages">Elekti lingvojn</string>
+    <string name="choose_languages_save">Konservi</string>
+    <string name="choose_languages_cancel">Nuligi</string>
+    <string name="show_system_apps">Montri sistemajn aplikaĵojn</string>
+    <string name="show_only_modified_apps">Montri nur modifatajn aplikaĵojn</string>
+</resources>

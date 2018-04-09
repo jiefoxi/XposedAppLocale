@@ -1,12 +1,13 @@
-package com.zhangfx.xposed.applocale;
+package com.flo354.xposed.applocale;
 
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 
 public class AppItem {
 
-    private PackageInfo packageInfo;
-    private String appLabel;
+    private final PackageInfo packageInfo;
+
+    private final String appLabel;
 
     public AppItem(PackageInfo packageInfo, String appLabel) {
         this.packageInfo = packageInfo;

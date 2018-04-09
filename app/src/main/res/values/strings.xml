@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">App Locale</string>
+    <string name="app_name" translatable="false">App Locale 2</string>
     <string name="xposed_description">Set language on a per-app basis</string>
 
     <string name="loading_apps">Loading Apps&#8230;</string>
@@ -8,19 +8,21 @@
     <string name="choose_languages">Choose Languages</string>
     <string name="choose_languages_save">Save</string>
     <string name="choose_languages_cancel">Cancel</string>
+    <string name="show_system_apps">Show system apps</string>
+    <string name="show_only_modified_apps">Show only modified apps</string>
 
-    <string-array name="locales">
+    <string-array name="locales" translatable="false">
         <item>ar-EG</item>
         <item>ar-IL</item>
-        <item>bg-BG</item>
-        <item>ca-ES</item>
-        <item>cs-CZ</item>
+        <item>bg</item>
+        <item>ca</item>
+        <item>cs</item>
         <item>da-DK</item>
         <item>de-AT</item>
         <item>de-CH</item>
         <item>de-DE</item>
         <item>de-LI</item>
-        <item>el-GR</item>
+        <item>el</item>
         <item>en-AU</item>
         <item>en-CA</item>
         <item>en-GB</item>
@@ -30,39 +32,42 @@
         <item>en-SG</item>
         <item>en-US</item>
         <item>en-ZA</item>
+        <item>eo</item>
         <item>es-ES</item>
         <item>es-US</item>
-        <item>fi-FI</item>
+        <item>fi</item>
         <item>fr-BE</item>
         <item>fr-CA</item>
         <item>fr-CH</item>
         <item>fr-FR</item>
-        <item>hi-IN</item>
-        <item>hr-HR</item>
-        <item>hu-HU</item>
+        <item>he</item>
+        <item>hi</item>
+        <item>hr</item>
+        <item>hu</item>
         <item>it-CH</item>
         <item>it-IT</item>
-        <item>ja-JP</item>
-        <item>ko-KR</item>
-        <item>lt-LT</item>
-        <item>lv-LV</item>
-        <item>nb-NO</item>
+        <item>ja</item>
+        <item>ko</item>
+        <item>lt</item>
+        <item>lv</item>
+        <item>nb</item>
         <item>nl-BE</item>
         <item>nl-NL</item>
-        <item>pl-PL</item>
+        <item>pl</item>
         <item>pt-BR</item>
         <item>pt-PT</item>
-        <item>ro-RO</item>
-        <item>ru-RU</item>
-        <item>sk-SK</item>
-        <item>sl-SI</item>
-        <item>sr-RS</item>
-        <item>sv-SE</item>
-        <item>th-TH</item>
-        <item>tr-TR</item>
-        <item>uk-UA</item>
-        <item>vi-VN</item>
+        <item>ro</item>
+        <item>ru</item>
+        <item>sk</item>
+        <item>sl</item>
+        <item>sr</item>
+        <item>sv</item>
+        <item>th</item>
+        <item>tr</item>
+        <item>uk</item>
+        <item>vi</item>
         <item>zh-CN</item>
         <item>zh-TW</item>
+        <item>zh-HK</item>
     </string-array>
 </resources>

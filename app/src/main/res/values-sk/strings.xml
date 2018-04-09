@@ -1,0 +1,12 @@
+<resources>
+    <string name="xposed_description">Nastavte jazyk pre jednotlivé aplikácie</string>
+
+    <string name="loading_apps">Načítavanie aplikácií&#8230;</string>
+    <string name="action_search">Hľadať</string>
+    <string name="action_language">Jazyky</string>
+    <string name="choose_languages">Zvoľte jazyky</string>
+    <string name="choose_languages_save">Uložiť</string>
+    <string name="choose_languages_cancel">Zrušiť</string>
+    <string name="show_system_apps">Zobraziť aj systémové</string>
+    <string name="show_only_modified_apps">Zobraziť iba zmenené</string>
+</resources>
